@@ -88,17 +88,6 @@ uvicorn main:app --host 0.0.0.0 --port 3535
 
 ---
 
-## 🎯 Future Plans
-
-- Integrate torrent search and download as fallback.
-- Auto-update Sonarr/Radarr status after manual download.
-- Add Telegram/Discord notification integration.
-- Improve search engine scraping for more sources.
-
----
-
----
-
 ## ⚡ License
 
 Free for personal use.  
