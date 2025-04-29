@@ -20,7 +20,7 @@ def get_document(url):
     return BeautifulSoup(response.text, "html.parser")
 
 
-def search_film(film_name_r, season):
+def search_film(film_name_r, season: int = None):
     links = []
     search_url = get_search_url(film_name_r, season)
     search_doc = get_document(search_url)

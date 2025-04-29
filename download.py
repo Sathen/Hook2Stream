@@ -4,10 +4,8 @@ import subprocess
 
 import database
 from settings import DOWNLOAD_DIR
-from sonarr import tell_sonarr_manual_import
 
 logging.basicConfig(level=logging.INFO)
-
 
 CURRENT_DOWNLOAD_PROCESS = None
 
@@ -32,8 +30,6 @@ def download_video(internal_id, url, filename):
         CURRENT_DOWNLOAD_PROCESS = subprocess.Popen(command)
         CURRENT_DOWNLOAD_PROCESS.wait()
         logging.info(f"✅ Finished downloading: {output_path}")
-        tell_sonarr_manual_import(internal_id, DOWNLOAD_DIR)
-        database.delete_from_db_by_ids(internal_id)
     except Exception as e:
         logging.error(f"❌ Download failed for {url}: {e}")
     finally:
@@ -48,7 +44,7 @@ def stop_current_download():
         CURRENT_DOWNLOAD_PROCESS = None
 
 
-def download_videos(internal_id: int, film_name: str, season: int, video_urls: list):
+def download_videos(internal_id: int, film_name: str, video_urls: list, season: int = None):
     video_urls = list(filter(None, video_urls))
     for index, url in enumerate(video_urls, start=1):
         season_part = f"_S{int(season):02d}" if season else ""

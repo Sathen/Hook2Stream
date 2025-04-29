@@ -13,6 +13,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS media_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT UNIQUE,
+                source_type TEXT NOT NULL,
                 internal_id INTEGER UNIQUE,
                 created_on TIMESTAMP,
                 local_title TEXT,
@@ -32,24 +33,23 @@ def init_db():
         conn.commit()
 
 
-def add_to_db(internal_id: int, title: str, date: str, tmdb_id: int, imdb_id: str, tvdb_id: int,
-              monitored_seasons: List[int], local_title: str = None):
+def add_to_db(media_data: MediaData, monitored_seasons):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("PRAGMA foreign_keys = ON")
         try:
             cursor.execute("""
-                INSERT INTO media_data (internal_id, title, created_on, tmdbId, imdbId, tvdbId, local_title)
+                INSERT INTO media_data (internal_id, title, source_type, created_on, tmdbId, imdbId, tvdbId, local_title)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (internal_id, title, date, tmdb_id, imdb_id, tvdb_id, local_title))
+            """, (media_data.internal_id, media_data.series_title, media_data.source_type, media_data.created_on, media_data.tmdb_id, media_data.imdb_id, media_data.tvdb_id, media_data.local_title))
             for season in monitored_seasons:
                 cursor.execute("""
                     INSERT INTO monitored_seasons (internal_id, season_number)
                     VALUES (?, ?)
-                """, (internal_id, season))
+                """, (media_data.internal_id, season))
             conn.commit()
         except sqlite3.IntegrityError:
-            logging.info(f"{title} already exists. Skipping insert.")
+            logging.info(f"{media_data.series_title} already exists. Skipping insert.")
 
 
 def delete_from_db_by_ids(internal_id: int = None, tmdb_id: int = None, imdb_id: str = None, tvdb_id: int = None):
@@ -73,7 +73,7 @@ def get_media_added_more_than(minutes_ago: int) -> List[MediaData]:
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT id, title, created_on, tmdbId, imdbId, tvdbId, internal_id, local_title
+            SELECT id, title, created_on, tmdbId, imdbId, tvdbId, internal_id, local_title, source_type
             FROM media_data
             WHERE created_on <= ?
         """, (cutoff_str,))
@@ -130,5 +130,6 @@ def map_media(row) -> MediaData:
         imdb_id=row[4],
         tvdb_id=row[5],
         internal_id=row[6],
-        local_title=row[7]
+        local_title=row[7],
+        source_type=row[8]
     )
