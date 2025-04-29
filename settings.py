@@ -1,9 +1,12 @@
-SONARR_URL = "https://tv.domcinema.win"
-DB_PATH = "data.db"
-TMDB_API_KEY = ""
-SONARR_API_KEY = ""
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+import os
+
+SONARR_URL = os.environ.get("SONARR_URL", "https://tv.domcinema.win")
+DB_PATH = os.environ.get("DB_PATH", "data.db")
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
+SONARR_API_KEY = os.environ.get("SONARR_API_KEY", "")
+HOST = os.environ.get("HOST", "https://uaserial.top")
+DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/app/downloads")
+
 
 SEARCH_QUERY = "search?query="
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
-HOST = "https://uaserial.top"
+USER_AGENT = os.environ.get("USER_AGENT", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36")

@@ -1,10 +1,12 @@
+import logging
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 import database
-import search_links
 from database import get_media_added_more_than, get_monitored_seasons
-import logging
+from download import download_videos
+from search_links import search_film
 
 scheduler = AsyncIOScheduler()
 job_is_running = False
@@ -30,8 +32,8 @@ async def grab_job():
             seasons = get_monitored_seasons(media.internal_id)
 
             for season in seasons:
-                video_links = search_links.search_film(media.local_title, season)
-                search_links.download_videos(media.local_title, season, video_links)
+                video_links = search_film(media.local_title, season)
+                download_videos(media.local_title, season, video_links)
 
             logging.info(f"Finished with {media.series_title} push to delete.")
             database.delete_from_db_by_ids(media.internal_id, media.tmdb_id, media.imdb_id, media.tvdb_id)

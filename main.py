@@ -1,13 +1,11 @@
+import json
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-import json
 
-from database import init_db, add_to_db, delete_from_db_by_ids, get_all_data
-from localization import get_ukrainian_title
+from database import init_db, get_all_data
 from media_service import add_media, delete_media
-from sonarr import get_monitored_seasons
 from models import MediaData, extract_fields
 from scheduler import start_grab_scheduler, shutdown
 
