@@ -33,7 +33,7 @@ async def grab_job():
 
             for season in seasons:
                 video_links = search_film(media.local_title, season)
-                download_videos(media.local_title, season, video_links)
+                download_videos(media.internal_id, media.local_title, season, video_links)
 
             logging.info(f"Finished with {media.series_title} push to delete.")
             database.delete_from_db_by_ids(media.internal_id, media.tmdb_id, media.imdb_id, media.tvdb_id)

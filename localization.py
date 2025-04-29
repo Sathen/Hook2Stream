@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 from settings import TMDB_API_KEY
 
-TMDB_BASE_URL = "https://api.themoviedb.org/3"
+TMDB_BASE_URL: str = "https://api.themoviedb.org/3"
 
 
 async def get_ukrainian_title(tmdb_id: int, media_type: str = "tv") -> Optional[str]:

@@ -52,15 +52,15 @@ def add_to_db(internal_id: int, title: str, date: str, tmdb_id: int, imdb_id: st
             logging.info(f"{title} already exists. Skipping insert.")
 
 
-def delete_from_db_by_ids(internal_id: int = None, tmdbId: int = None, imdbId: str = None, tvdbId: int = None):
+def delete_from_db_by_ids(internal_id: int = None, tmdb_id: int = None, imdb_id: str = None, tvdb_id: int = None):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        if tmdbId:
-            cursor.execute("DELETE FROM media_data WHERE tmdbId = ?", (tmdbId,))
-        elif imdbId:
-            cursor.execute("DELETE FROM media_data WHERE imdbId = ?", (imdbId,))
-        elif tvdbId:
-            cursor.execute("DELETE FROM media_data WHERE tvdbId = ?", (tvdbId,))
+        if tmdb_id:
+            cursor.execute("DELETE FROM media_data WHERE tmdbId = ?", (tmdb_id,))
+        elif imdb_id:
+            cursor.execute("DELETE FROM media_data WHERE imdbId = ?", (imdb_id,))
+        elif tvdb_id:
+            cursor.execute("DELETE FROM media_data WHERE tvdbId = ?", (tvdb_id,))
         elif internal_id:
             cursor.execute("DELETE FROM media_data WHERE internal_id = ?", (internal_id,))
         conn.commit()
