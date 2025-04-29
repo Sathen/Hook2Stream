@@ -19,7 +19,6 @@ async def lifespan(app: FastAPI):
     init_db()
     await start_grab_scheduler()
     yield
-    await shutdown()
 
 
 app = FastAPI(lifespan=lifespan)

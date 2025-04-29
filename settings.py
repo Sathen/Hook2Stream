@@ -6,6 +6,7 @@ TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
 SONARR_API_KEY = os.environ.get("SONARR_API_KEY", "")
 HOST = os.environ.get("HOST", "https://uaserial.top")
 DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/app/downloads")
+SCHEDULER_INTERVAL = os.environ.get("SCHEDULER_INTERVAL", "5")
 
 
 SEARCH_QUERY = "search?query="

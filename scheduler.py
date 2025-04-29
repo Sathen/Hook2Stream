@@ -46,7 +46,7 @@ async def grab_job():
 
 
 async def start_grab_scheduler():
-    scheduler.add_job(grab_job, IntervalTrigger(seconds=30))
+    scheduler.add_job(grab_job, IntervalTrigger(minutes=5))
     scheduler.start()
     logging.info("[Scheduler] Started Grab Job every 5 minutes")
 
