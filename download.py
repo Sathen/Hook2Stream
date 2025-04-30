@@ -1,19 +1,40 @@
-import logging
 import os
+import signal
 import subprocess
+import threading
 
-import database
 from settings import DOWNLOAD_DIR
+from logger import get_logger
 
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
-CURRENT_DOWNLOAD_PROCESS = None
+running_processes = []
+process_lock = threading.Lock()
+stop_flag = threading.Event()
 
 
-def download_video(internal_id, url, filename):
-    global CURRENT_DOWNLOAD_PROCESS
+def is_aborted():
+    return not stop_flag.is_set()
 
-    logging.info(f"🎬 Starting download: {filename}")
+
+def reset():
+    stop_flag.clear()
+
+
+def start_subprocess(command: list) -> subprocess.Popen:
+    return subprocess.Popen(
+        command,
+        preexec_fn=os.setsid,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+
+
+def download_video(url, filename) -> bool:
+    global running_processes
+
+    logger.info(f"🎬 Starting download: {filename}")
     output_path = os.path.join(DOWNLOAD_DIR, filename)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -27,28 +48,42 @@ def download_video(internal_id, url, filename):
     ]
 
     try:
-        CURRENT_DOWNLOAD_PROCESS = subprocess.Popen(command)
-        CURRENT_DOWNLOAD_PROCESS.wait()
-        logging.info(f"✅ Finished downloading: {output_path}")
+        process = start_subprocess(command)
+        with process_lock:
+            running_processes.append(process)
+        for line in process.stdout:
+            logger.info(f"[yt-dlp] {line.strip()}")
+        logger.info(f"✅ Finished downloading: {output_path}")
+        return True
     except Exception as e:
-        logging.error(f"❌ Download failed for {url}: {e}")
+        logger.error(f"❌ Download failed for {url}: {e}")
+        return False
     finally:
-        CURRENT_DOWNLOAD_PROCESS = None
+        with process_lock:
+            if process in running_processes:
+                running_processes.remove(process)
 
 
-def stop_current_download():
-    global CURRENT_DOWNLOAD_PROCESS
-    if CURRENT_DOWNLOAD_PROCESS and CURRENT_DOWNLOAD_PROCESS.poll() is None:
-        logging.info("🛑 Interrupting current download...")
-        CURRENT_DOWNLOAD_PROCESS.terminate()
-        CURRENT_DOWNLOAD_PROCESS = None
+def stop_all_downloads():
+    for proc in running_processes:
+        if proc.poll() is None:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                stop_flag.set()
+            except Exception as e:
+                print(f"Failed to kill {proc.pid}: {e}")
 
 
-def download_videos(internal_id: int, film_name: str, video_urls: list, season: int = None):
+def download_videos(film_name: str, video_urls: list, season: int = None):
     video_urls = list(filter(None, video_urls))
+    safe_film_name = film_name.replace(" ", "_")
+    download_folder = f"{safe_film_name}/"
     for index, url in enumerate(video_urls, start=1):
-        season_part = f"_S{int(season):02d}" if season else ""
-        episode_part = f"_E{index:02d}" if season else ""
-        safe_film_name = film_name.replace(" ", "_")
-        filename = f"{safe_film_name}/{safe_film_name}{season_part}{episode_part}.mp4"
-        download_video(internal_id, url, filename)
+        if is_aborted():
+            season_part = f"_S{int(season):02d}" if season else ""
+            episode_part = f"_E{index:02d}" if season else ""
+            filename = download_folder + f"{safe_film_name}{season_part}{episode_part}.mp4"
+            download_video(url, filename)
+
+    reset()
+    return download_folder

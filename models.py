@@ -26,7 +26,7 @@ async def map_sonarr_response(body_json) -> MediaData:
 
     if "series" in body_json and isinstance(body_json["series"], dict):
         series_title = body_json["series"].get("title")
-        created_on = datetime.now()
+        created_on = str(datetime.now())
         tmdb_id = body_json["series"].get("tmdbId")
         internal_id = body_json["series"].get("id")
         imdb_id = body_json["series"].get("imdbId")
@@ -35,7 +35,7 @@ async def map_sonarr_response(body_json) -> MediaData:
     return MediaData(
         internal_id=internal_id,
         created_on=created_on,
-        source_type="SANAR",
+        source_type="SONARR",
         event_type=event_type,
         imdb_id=imdb_id,
         series_title=series_title,
@@ -56,7 +56,7 @@ async def map_radarr_response(body_json) -> MediaData:
 
     if "movies" in body_json and isinstance(body_json["movies"], dict):
         series_title = body_json["movies"].get("title")
-        created_on = datetime.now()
+        created_on = str(datetime.now())
         tmdb_id = body_json["movies"].get("tmdbId")
         internal_id = body_json["movies"].get("id")
         imdb_id = body_json["movies"].get("imdbId")

@@ -1,7 +1,9 @@
 import httpx
-import logging
 from typing import Optional
 from settings import TMDB_API_KEY
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 TMDB_BASE_URL: str = "https://api.themoviedb.org/3"
 
@@ -26,12 +28,11 @@ async def get_ukrainian_title(tmdb_id: int, media_type: str = "tv") -> Optional[
             response.raise_for_status()
             data = response.json()
 
-            # Для фільмів 'title', для серіалів 'name'
             return data.get("title") or data.get("name")
 
     except httpx.HTTPStatusError as e:
-        logging.error(f"TMDb API error: {e.response.status_code} - {e.response.text}")
+        logger.error(f"TMDb API error: {e.response.status_code} - {e.response.text}")
     except Exception as e:
-        logging.error(f"Unexpected error when accessing TMDb API: {e}")
+        logger.error(f"Unexpected error when accessing TMDb API: {e}")
 
     return None

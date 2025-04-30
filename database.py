@@ -3,7 +3,9 @@ import sqlite3
 from typing import List
 from models import MediaData
 from settings import DB_PATH
-import logging
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def init_db():
@@ -40,8 +42,9 @@ def add_to_db(media_data: MediaData, monitored_seasons):
         try:
             cursor.execute("""
                 INSERT INTO media_data (internal_id, title, source_type, created_on, tmdbId, imdbId, tvdbId, local_title)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (media_data.internal_id, media_data.series_title, media_data.source_type, media_data.created_on, media_data.tmdb_id, media_data.imdb_id, media_data.tvdb_id, media_data.local_title))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (media_data.internal_id, media_data.series_title, media_data.source_type, media_data.created_on,
+                  media_data.tmdb_id, media_data.imdb_id, media_data.tvdb_id, media_data.local_title))
             for season in monitored_seasons:
                 cursor.execute("""
                     INSERT INTO monitored_seasons (internal_id, season_number)
@@ -49,7 +52,7 @@ def add_to_db(media_data: MediaData, monitored_seasons):
                 """, (media_data.internal_id, season))
             conn.commit()
         except sqlite3.IntegrityError:
-            logging.info(f"{media_data.series_title} already exists. Skipping insert.")
+            logger.info(f"{media_data.series_title} already exists. Skipping insert.")
 
 
 def delete_from_db_by_ids(internal_id: int = None, tmdb_id: int = None, imdb_id: str = None, tvdb_id: int = None):
@@ -96,7 +99,8 @@ def get_monitored_seasons(internal_id: int):
 def get_all_data():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, title, created_on, tmdbId, imdbId, tvdbId, internal_id, local_title FROM media_data")
+        cursor.execute("SELECT id, title, created_on, tmdbId, imdbId, tvdbId, internal_id, local_title, source_type "
+                       "FROM media_data")
         rows = cursor.fetchall()
 
         media_list = []
@@ -115,6 +119,7 @@ def get_all_data():
                 "imdbId": row[4],
                 "tvdbId": row[5],
                 "localTitle": row[7],
+                "sourceType": row[8],
                 "monitored_seasons": monitored_seasons
             })
 
@@ -124,7 +129,7 @@ def get_all_data():
 def map_media(row) -> MediaData:
     return MediaData(
         series_title=row[1],
-        date=row[2],
+        created_on=row[2],
         event_type=None,
         tmdb_id=row[3],
         imdb_id=row[4],

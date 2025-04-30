@@ -1,18 +1,18 @@
 import json
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 
 from database import init_db, get_all_data
-from download import stop_current_download
+from download import stop_all_downloads
 from media_service import add_media, delete_media
 from models import MediaData, map_sonarr_response, map_radarr_response
 from scheduler import start_grab_scheduler
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 app = FastAPI()
-
-logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
@@ -27,17 +27,9 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/webhook/sonarr")
 async def sonarr_webhook(request: Request):
-    logging.info(f"Sadarr incoming request: {request}")
+    logger.info(f"Sadarr incoming request: {request}")
 
-    body_bytes = await request.body()
-    body_text = body_bytes.decode('utf-8', errors='replace')
-
-    try:
-        body_json = json.loads(body_text)
-    except json.JSONDecodeError:
-        logging.info("Error parsing Json response")
-
-    media_data: MediaData = await map_sonarr_response(body_json)
+    media_data: MediaData = await map_sonarr_response(request.json())
 
     if media_data.event_type == "SeriesAdd" and media_data.tmdb_id:
         await add_media(media_data)
@@ -48,17 +40,9 @@ async def sonarr_webhook(request: Request):
 
 @app.post("/webhook/radarr")
 async def radarr_webhook(request: Request):
-    logging.info(f"Radarr incoming request: {request}")
+    logger.info(f"Radarr incoming request: {request}")
 
-    body_bytes = await request.body()
-    body_text = body_bytes.decode('utf-8', errors='replace')
-
-    try:
-        body_json = json.loads(body_text)
-    except json.JSONDecodeError:
-        logging.info("Error parsing Json response")
-
-    media_data: MediaData = await map_radarr_response(body_json)
+    media_data: MediaData = await map_radarr_response(request.json())
 
     if media_data.event_type == "MovieAdd" and media_data.tmdb_id:
         await add_media(media_data)
@@ -74,7 +58,7 @@ async def get_all():
 
 @app.get("/download/stop")
 async def get_all():
-    return stop_current_download()
+    return stop_all_downloads()
 
 
 if __name__ == "__main__":

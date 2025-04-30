@@ -1,14 +1,15 @@
 import json
-import logging
 import time
 import urllib.parse
 
 import requests
 from bs4 import BeautifulSoup
 
+from models import MediaData
 from settings import USER_AGENT, HOST, SEARCH_QUERY
+from logger import get_logger
 
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
 
 def get_document(url):
@@ -20,14 +21,16 @@ def get_document(url):
     return BeautifulSoup(response.text, "html.parser")
 
 
-def search_film(film_name_r, season: int = None):
+def search_film(media: MediaData, season: int = None):
     links = []
-    search_url = get_search_url(film_name_r, season)
-    search_doc = get_document(search_url)
-    link_to_film = search_doc.select_one("div#block-search-page div.row div.col div.item a[href]")
+    title_candidates = [media.local_title, media.series_title]
 
-    if not link_to_film:
-        logging.info("Фільм не знайдено у пошуку.")
+    for title in title_candidates:
+        link_to_film = try_get_link_to_film(title, season)
+        if link_to_film:
+            break
+    else:
+        logger.info("Film was not found.")
         return []
 
     film_page_url = HOST + link_to_film["href"]
@@ -38,12 +41,19 @@ def search_film(film_name_r, season: int = None):
         time.sleep(1)
         embed_doc = get_document(url)
         if not embed_doc:
-            logging.info(f"Embed link not found: {url}")
+            logger.info(f"Embed link not found: {url}")
             return []
         video_options = embed_doc.select("option[data-type=link]")
         links.append(get_source_url(video_options))
 
     return links
+
+
+def try_get_link_to_film(title, season: int = None):
+    search_url = get_search_url(title, season)
+    search_doc = get_document(search_url)
+    link_to_film = search_doc.select_one("div#block-search-page div.row div.col div.item a[href]")
+    return link_to_film
 
 
 def get_source_url(video_options):
@@ -79,7 +89,7 @@ def get_tv_embed_url(film_data, season):
     return links
 
 
-def get_search_url(film_name_r, season):
+def get_search_url(film_name_r, season: int = None):
     search_value = film_name_r
     if season:
         search_value = film_name_r + " " + str(season)
@@ -99,6 +109,6 @@ def get_film_data(url):
             data = json.loads(json_data)
             return data
         except json.JSONDecodeError as e:
-            logging.info(f"Помилка при розборі JSON: {e}")
+            logger.info(f"Помилка при розборі JSON: {e}")
     else:
-        logging.info("Не знайдено тег <script type='application/ld+json'>")
+        logger.info("Не знайдено тег <script type='application/ld+json'>")

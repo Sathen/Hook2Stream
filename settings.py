@@ -11,7 +11,7 @@ RADARR_API_KEY = os.environ.get("RADARR_API_KEY", "")
 
 
 DB_PATH = os.environ.get("DB_PATH", "data.db")
-DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/app/downloads")
+DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "downloads")
 SCHEDULER_INTERVAL = os.environ.get("SCHEDULER_INTERVAL", "5")
 
 SEARCH_QUERY = "search?query="
