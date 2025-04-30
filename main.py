@@ -48,7 +48,7 @@ async def sonarr_webhook(request: Request):
 
 @app.post("/webhook/radarr")
 async def radarr_webhook(request: Request):
-    logger.info(f"Radarr incoming request: {request}")
+    logger.info(f"Radarr incoming request: {request.json()}")
 
     body_bytes = await request.body()
     body_text = body_bytes.decode('utf-8', errors='replace')

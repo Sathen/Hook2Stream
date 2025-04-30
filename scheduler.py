@@ -62,7 +62,7 @@ async def handle_sonarr_media(media: MediaData):
 
         path = await asyncio.to_thread(download_videos, media.series_title, video_links, season)
 
-        if not download.is_aborted():
+        if download.is_aborted():
             await tell_sonarr_manual_import(media, path, season)
 
 
