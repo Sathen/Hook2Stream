@@ -29,7 +29,15 @@ app = FastAPI(lifespan=lifespan)
 async def sonarr_webhook(request: Request):
     logger.info(f"Sadarr incoming request: {request}")
 
-    media_data: MediaData = await map_sonarr_response(request.json())
+    body_bytes = await request.body()
+    body_text = body_bytes.decode('utf-8', errors='replace')
+
+    try:
+        body_json = json.loads(body_text)
+    except json.JSONDecodeError:
+        logger.info("Error parsing Json response")
+
+    media_data: MediaData = await map_sonarr_response(body_json)
 
     if media_data.event_type == "SeriesAdd" and media_data.tmdb_id:
         await add_media(media_data)
@@ -42,7 +50,15 @@ async def sonarr_webhook(request: Request):
 async def radarr_webhook(request: Request):
     logger.info(f"Radarr incoming request: {request}")
 
-    media_data: MediaData = await map_radarr_response(request.json())
+    body_bytes = await request.body()
+    body_text = body_bytes.decode('utf-8', errors='replace')
+
+    try:
+        body_json = json.loads(body_text)
+    except json.JSONDecodeError:
+        logger.info("Error parsing Json response")
+
+    media_data: MediaData = await map_radarr_response(body_json)
 
     if media_data.event_type == "MovieAdd" and media_data.tmdb_id:
         await add_media(media_data)
@@ -59,7 +75,6 @@ async def get_all():
 @app.get("/download/stop")
 async def get_all():
     return stop_all_downloads()
-
 
 if __name__ == "__main__":
     import uvicorn

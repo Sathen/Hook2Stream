@@ -76,7 +76,7 @@ async def handle_ranarr_media(media: MediaData):
 
 
 async def start_grab_scheduler():
-    scheduler.add_job(grab_job, IntervalTrigger(seconds=30))
+    scheduler.add_job(grab_job, IntervalTrigger(minutes=5))
     scheduler.start()
     logger.info("[Scheduler] Started Grab Job every 5 minutes")
 
