@@ -10,7 +10,7 @@ SONARR_API_KEY = os.environ.get("SONARR_API_KEY", "")
 RADARR_API_KEY = os.environ.get("RADARR_API_KEY", "")
 
 
-DB_PATH = os.environ.get("DB_PATH", "data.db")
+DB_PATH = os.environ.get("DB_PATH", "db/data.db")
 DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "downloads")
 SCHEDULER_INTERVAL = os.environ.get("SCHEDULER_INTERVAL", "5")
 
