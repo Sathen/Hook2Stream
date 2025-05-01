@@ -1,11 +1,11 @@
-import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 
+from util import request_to_json
 from database import init_db, get_all_data
 from download import stop_all_downloads
-from media_service import add_media, delete_media
+from service.media_service import add_media, delete_media
 from models import MediaData, map_sonarr_response, map_radarr_response
 from scheduler import start_grab_scheduler
 from logger import get_logger
@@ -27,44 +27,30 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/webhook/sonarr")
 async def sonarr_webhook(request: Request):
-    logger.info(f"Sadarr incoming request: {request}")
+    logger.info(f"Sadarr incoming request: {request.json()}")
 
-    body_bytes = await request.body()
-    body_text = body_bytes.decode('utf-8', errors='replace')
-
-    try:
-        body_json = json.loads(body_text)
-    except json.JSONDecodeError:
-        logger.info("Error parsing Json response")
-
+    body_json = request_to_json(request)
     media_data: MediaData = await map_sonarr_response(body_json)
 
-    if media_data.event_type == "SeriesAdd" and media_data.tmdb_id:
-        await add_media(media_data)
-
-    if media_data.event_type in ("Grab", "SeriesDelete"):
-        await delete_media(media_data)
+    await handle_media(media_data)
 
 
 @app.post("/webhook/radarr")
 async def radarr_webhook(request: Request):
     logger.info(f"Radarr incoming request: {request.json()}")
 
-    body_bytes = await request.body()
-    body_text = body_bytes.decode('utf-8', errors='replace')
-
-    try:
-        body_json = json.loads(body_text)
-    except json.JSONDecodeError:
-        logger.info("Error parsing Json response")
-
+    body_json = request_to_json(request)
     media_data: MediaData = await map_radarr_response(body_json)
 
-    if media_data.event_type == "MovieAdd" and media_data.tmdb_id:
-        await add_media(media_data)
+    await handle_media(media_data)
 
-    if media_data.event_type in ("Grab", "MovieDelete"):
-        await delete_media(media_data)
+
+async def handle_media(media: MediaData):
+    if media.event_type in ("MovieAdded", "SeriesAdd") and media.tmdb_id:
+        await add_media(media)
+
+    if media.event_type in ("Grab", "MovieDelete", "SeriesDelete"):
+        await delete_media(media)
 
 
 @app.get("/all")

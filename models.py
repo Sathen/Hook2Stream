@@ -53,14 +53,16 @@ async def map_radarr_response(body_json) -> MediaData:
     tmdb_id = None
     imdb_id = None
     tvdb_id = None
+    local_title = None
 
-    if "movies" in body_json and isinstance(body_json["movies"], dict):
-        series_title = body_json["movies"].get("title")
+    movie = body_json.get("movie", {})
+
+    if isinstance(movie, dict):
+        series_title = movie.get("title")
         created_on = str(datetime.now())
-        tmdb_id = body_json["movies"].get("tmdbId")
-        internal_id = body_json["movies"].get("id")
-        imdb_id = body_json["movies"].get("imdbId")
-        tvdb_id = body_json["movies"].get("tvdbId")
+        tmdb_id = movie.get("tmdbId")
+        internal_id = movie.get("id")
+        imdb_id = movie.get("imdbId")
 
     return MediaData(
         internal_id=internal_id,
@@ -71,5 +73,5 @@ async def map_radarr_response(body_json) -> MediaData:
         series_title=series_title,
         tmdb_id=tmdb_id,
         tvdb_id=tvdb_id,
-        local_title=None
+        local_title=local_title
     )

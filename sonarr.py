@@ -10,7 +10,7 @@ from logger import get_logger
 logger = get_logger(__name__)
 
 
-async def get_monitored_seasons(series_id: int) -> List:
+async def get_monitored_seasons(series_id: int):
     url = f"{SONARR_URL}/api/v3/series/{series_id}"
     headers = {
         "X-Api-Key": SONARR_API_KEY
