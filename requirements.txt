@@ -1,10 +1,13 @@
 fastapi~=0.115.12
 uvicorn[standard]~=0.34.2
 httpx~=0.28.1
-apscheduler~=3.11.0
 
 pydantic~=2.11.3
 requests~=2.32.3
 bs4~=0.0.2
 beautifulsoup4~=4.13.4
-psutil~=7.0.0
+starlette~=0.46.2
+rangedict~=0.1.7
+demjson3~=3.0.6
+aiohttp~=3.12.11
+yt-dlp~=2025.5.22

@@ -1,66 +1,68 @@
+import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 
-from util import request_to_json
-from database import init_db, get_all_data
-from download import stop_all_downloads
-from service.media_service import add_media, delete_media
-from models import MediaData, map_sonarr_response, map_radarr_response
-from scheduler import start_grab_scheduler
+from cache import use_cache
 from logger import get_logger
+from media_models import StreamsSearchRequest
+from service import search_service
+from util import request_to_json
 
 logger = get_logger(__name__)
-
-app = FastAPI()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    await start_grab_scheduler()
     yield
 
 
 app = FastAPI(lifespan=lifespan)
 
-
-@app.post("/webhook/sonarr")
-async def sonarr_webhook(request: Request):
-    logger.info(f"Sadarr incoming request: {request.json()}")
-
-    body_json = request_to_json(request)
-    media_data: MediaData = await map_sonarr_response(body_json)
-
-    await handle_media(media_data)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.post("/webhook/radarr")
-async def radarr_webhook(request: Request):
-    logger.info(f"Radarr incoming request: {request.json()}")
-
-    body_json = request_to_json(request)
-    media_data: MediaData = await map_radarr_response(body_json)
-
-    await handle_media(media_data)
-
-
-async def handle_media(media: MediaData):
-    if media.event_type in ("MovieAdded", "SeriesAdd") and media.tmdb_id:
-        await add_media(media)
-
-    if media.event_type in ("Grab", "MovieDelete", "SeriesDelete"):
-        await delete_media(media)
+@app.get("/online/search")
+async def search_media(name: str):
+    logger.info(f"Search incoming request: {name}")
+    result = use_cache(f"online_get:{name}",
+                       expire=60,
+                       func=lambda: search_service.search(name))
+    return result
 
 
-@app.get("/all")
-async def get_all():
-    return get_all_data()
+@app.get("/online/get")
+async def get_media(path: str):
+    logger.info(f"Get incoming request: {path}")
+    result = await search_service.get_media(path)
+    return result
 
 
-@app.get("/download/stop")
-async def get_all():
-    return stop_all_downloads()
+@app.get("/online/videos")
+async def get_videos(path: str):
+    result = await search_service.get_videos(path)
+    return result
+
+
+@app.post("/online/film-streams")
+async def get_film_streams_endpoint(request: Request):
+    logger.info(f"Get incoming request: {request.url}")
+    start_time = time.time()
+    json = await request_to_json(request)
+    search_request = StreamsSearchRequest.from_json(json)
+    result = await search_service.new_get_film_streams(search_request)
+    logger.info(f"Get film streams request time: {time.time() - start_time}")
+    logger.info(f"Get film streams result: {result}")
+    return result
+
 
 if __name__ == "__main__":
     import uvicorn
