@@ -7,7 +7,7 @@ from starlette.requests import Request
 
 from cache import use_cache
 from logger import get_logger
-from media_models import StreamsSearchRequest
+from media_models import StreamsSearchRequest, SearchItem
 from service import search_service
 from util import request_to_json
 
@@ -39,10 +39,12 @@ async def search_media(name: str):
     return result
 
 
-@app.get("/online/get")
-async def get_media(path: str):
-    logger.info(f"Get incoming request: {path}")
-    result = await search_service.get_media(path)
+@app.post("/online/get")
+async def get_media(request: Request):
+    logger.info(f"Get incoming request: {request}")
+    json = await request_to_json(request)
+    search_request = SearchItem.from_json(json)
+    result = await search_service.get_media(search_request)
     return result
 
 

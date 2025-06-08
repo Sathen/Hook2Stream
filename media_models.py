@@ -145,6 +145,14 @@ class SearchItem(BaseModel):
     year: Optional[int]
     rating: Optional[float]
 
+    @staticmethod
+    def from_json(data: dict) -> "SearchItem":
+        return SearchItem(title=data.get("title"),
+                          path=data.get("path"),
+                          img=data.get("img"),
+                          year=data.get("year"),
+                          rating=data.get("rating"))
+
 
 class SearchResult(BaseModel):
     items: list[SearchItem]

@@ -21,6 +21,7 @@ constants = {
     "select_desc": "a[href][title]:not([class]):not([id])",
     "select_img": "img[src]",
     "select_rating": "div[data-mark]",
+    "select_year": "a.info__item--year"
 }
 
 excluded_sources = {"videocdn", "voidboost", "vidsrc"}
@@ -40,10 +41,11 @@ def search(name: str) -> SearchResult:
         desc = result.select_one(constants["select_desc"])
         title = str(desc["title"])
         rating = result.select_one(constants["select_rating"]).get("data-mark")
+        year = int(result.select_one(constants["select_year"]).text)
         link = _construct_full_url(str(desc["href"]))
         img = _construct_full_url(result.select_one(constants["select_img"]).get("src"))
 
-        item = SearchItem(title=title, path=link, img=img, year=0, rating=rating)
+        item = SearchItem(title=title, path=link, img=img, year=year, rating=rating)
         items.append(item)
 
     logger.info(f"Found {len(items)} items.")
@@ -174,17 +176,18 @@ def _extract_serial_data(soup):
     return None
 
 
-async def get_media(path: str) -> MediaDTO:
-    film_data = await get_film_data(path)
+async def get_media(search_item: SearchItem) -> MediaDTO:
+    film_data = await get_film_data(search_item.path)
     original_name = str(film_data["original_name"])
     if film_data["@type"] == "Movie":
         names = [original_name, str(film_data["name"])]
-        tmdb_data = await tmdb_client.search_by_name(names, media_type="movie")
+
+        tmdb_data = await tmdb_client.search_by_name(names, search_item.year, media_type="movie")
         return await get_movie_data(film_data, tmdb_data)
     elif film_data["@type"] in ["TVSeries", "TVSeason"]:
         film_data = film_data["partOfTVSeries"]
         series_names = [original_name, str(film_data["name"])]
-        tmdb_data = await tmdb_client.search_by_name(series_names, media_type="tv")
+        tmdb_data = await tmdb_client.search_by_name(series_names,  search_item.year,media_type="tv")
         tmdb_data = await tmdb_client.get_tmdb_details(tmdb_data["id"], media_type="tv")
         return await get_tv_data(film_data, tmdb_data)
 

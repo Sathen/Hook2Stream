@@ -37,7 +37,7 @@ async def get_tv_data(film_data: Any, tmdb_data: Any) -> TvSeriesDTO:
     for season in seasons_data:
         season_number = season.get("seasonNumber")
         season_url = season.get("url")
-        embed_episode_urls = await get_tv_embed_urls(season_url)  # {episode_number: embed_url}
+        embed_episode_urls = await get_tv_embed_urls(season_url)
 
         season_details = await tmdb_client.get_tmdb_season(tmdb_id, season_number)
 

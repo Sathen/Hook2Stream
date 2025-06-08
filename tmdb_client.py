@@ -78,7 +78,7 @@ def _adopt_search_param(name) -> List[str]:
     return [name.strip()]
 
 
-async def search_by_name(names: List[str], media_type: str = "tv") -> Dict[str, Optional[Any]]:
+async def search_by_name(names: List[str], year:Optional[Any], media_type: str = "tv") -> Dict[str, Optional[Any]]:
     search_names = []
     for name in names:
         search_names.extend(_adopt_search_param(name))
@@ -86,9 +86,10 @@ async def search_by_name(names: List[str], media_type: str = "tv") -> Dict[str, 
     url = f"{TMDB_BASE_URL}/search/{media_type}"
 
     params = []
-    for name in names:
+    for name in search_names:
         params.append({
             "query": name,
+            "year": year,
             "language": "uk-UA",
         })
 
