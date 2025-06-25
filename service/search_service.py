@@ -40,7 +40,7 @@ def search(name: str) -> SearchResult:
     for result in search_items:
         desc = result.select_one(constants["select_desc"])
         title = str(desc["title"])
-        rating = result.select_one(constants["select_rating"]).get("data-mark")
+        rating = (el := result.select_one(constants["select_rating"])) and el.get("data-mark")
         year = int(result.select_one(constants["select_year"]).text)
         link = _construct_full_url(str(desc["href"]))
         img = _construct_full_url(result.select_one(constants["select_img"]).get("src"))

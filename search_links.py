@@ -1,53 +1,21 @@
+import asyncio
 import json
 import re
-import ssl
 import urllib.parse
 from enum import Enum
 from typing import Any, Optional, List, Dict, Union
 
-import aiohttp
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 from fastapi.openapi.models import MediaType
 
 from logger import get_logger
 from media_models import MediaData, SearchStreamItem
-from settings import USER_AGENT, HOST, SEARCH_QUERY
+from settings import HOST, SEARCH_QUERY
 
 logger = get_logger(__name__)
 
-
-class AsyncHTTPClient:
-    _session: Optional[aiohttp.ClientSession] = None
-
-    @classmethod
-    async def get_session(cls) -> aiohttp.ClientSession:
-        """Get session with SSL verification disabled."""
-        if cls._session is None or cls._session.closed:
-            # Create SSL context that doesn't verify certificates
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-
-            connector = aiohttp.TCPConnector(
-                ssl=ssl_context,
-                limit=100,
-                limit_per_host=30
-            )
-
-            cls._session = aiohttp.ClientSession(
-                connector=connector,
-                timeout=aiohttp.ClientTimeout(total=30)
-            )
-        return cls._session
-
-    @classmethod
-    async def close_session(cls):
-        """Close the shared session."""
-        if cls._session and not cls._session.closed:
-            await cls._session.close()
-            cls._session = None
-
+scrapper = cloudscraper.create_scraper()
 
 class MediaType(Enum):
     TV = "tv",
@@ -55,28 +23,14 @@ class MediaType(Enum):
 
 
 def get_document(url: str) -> BeautifulSoup:
-    headers = {"User-Agent": USER_AGENT}
-    response = requests.get(url, headers=headers, timeout=10)
+    response = scrapper.get(url, timeout=10)
     if response.status_code != 200:
         return BeautifulSoup("", "html.parser")
     return BeautifulSoup(response.text, "html.parser")
 
 
 async def get_document_async(url: str) -> BeautifulSoup:
-    try:
-        session = await AsyncHTTPClient.get_session()
-        async with session.get(url) as response:
-            if response.status != 200:
-                logger.warning(f"HTTP {response.status} for {url}")
-                return BeautifulSoup("", 'html.parser')
-
-            html_content = await response.text()
-            return BeautifulSoup(html_content, 'html.parser')
-
-    except Exception as e:
-        logger.error(f"Error fetching document from {url}: {e}")
-        return BeautifulSoup("", 'html.parser')
-
+    return await asyncio.to_thread(get_document, url)
 
 def search_film(media: MediaData, season: int = None):
     links = []

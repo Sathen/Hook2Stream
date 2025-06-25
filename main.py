@@ -45,6 +45,7 @@ async def get_media(request: Request):
     json = await request_to_json(request)
     search_request = SearchItem.from_json(json)
     result = await search_service.get_media(search_request)
+    logger.info(f"Get media result: {result}")
     return result
 
 

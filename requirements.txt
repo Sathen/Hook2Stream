@@ -11,3 +11,4 @@ rangedict~=0.1.7
 demjson3~=3.0.6
 aiohttp~=3.12.11
 yt-dlp~=2025.5.22
+cloudscraper~=1.2.71
